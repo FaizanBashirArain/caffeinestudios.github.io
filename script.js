@@ -13,6 +13,30 @@ const copyButtons = document.querySelectorAll("[data-copy]");
 const toast = document.querySelector(".toast");
 const currentYear = document.querySelector("#current-year");
 const homeBrandLinks = document.querySelectorAll('.brand[href="#top"]');
+const gameFilters = document.querySelector(".game-filters");
+
+if (gameFilters) {
+  const filterButtons = gameFilters.querySelectorAll("[data-filter]");
+  const games = document.querySelectorAll(".game-card[data-genre]");
+  const results = document.querySelector("#game-results");
+
+  gameFilters.hidden = false;
+  filterButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const filter = button.dataset.filter;
+      let visibleCount = 0;
+
+      filterButtons.forEach((filterButton) => {
+        filterButton.setAttribute("aria-pressed", String(filterButton === button));
+      });
+      games.forEach((game) => {
+        game.hidden = filter !== "all" && game.dataset.genre !== filter;
+        if (!game.hidden) visibleCount += 1;
+      });
+      results.textContent = `${visibleCount} games shown`;
+    });
+  });
+}
 
 homeBrandLinks.forEach((link) => {
   link.addEventListener("click", (event) => {
@@ -121,8 +145,9 @@ if (videoDialog) {
 
 let toastTimer;
 
-const showToast = () => {
+const showToast = (message) => {
   if (!toast) return;
+  toast.textContent = message;
   toast.classList.add("is-visible");
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2200);
@@ -141,8 +166,11 @@ const copyText = async (value) => {
   temporaryInput.style.opacity = "0";
   document.body.appendChild(temporaryInput);
   temporaryInput.select();
-  document.execCommand("copy");
-  temporaryInput.remove();
+  try {
+    if (!document.execCommand("copy")) throw new Error("Copy unavailable");
+  } finally {
+    temporaryInput.remove();
+  }
 };
 
 copyButtons.forEach((button) => {
@@ -156,9 +184,9 @@ copyButtons.forEach((button) => {
           status.textContent = "Copy";
         }, 2200);
       }
-      showToast();
+      showToast(button.dataset.copyFeedback || "Discord username copied");
     } catch {
-      window.prompt("Copy Discord username:", button.dataset.copy);
+      window.prompt(button.dataset.copyPrompt || "Copy Discord username", button.dataset.copy);
     }
   });
 });
